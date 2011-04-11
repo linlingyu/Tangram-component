@@ -2,9 +2,14 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script language='JavaScript' src='../../../../src/import.php?f=baidu.i18n.cultures.zh-CN,baidu.ui.Calendar'></script>
 <title>Insert title here</title>
 <style type='text/css'>
+.tangram-popup{
+    border:red solid 1px;
+    width: 100%;
+    height: 100%;
+}
+/*calendar*/
 .tangram-calendar {
     border:red solid 1px;
     width: 100%;
@@ -82,23 +87,26 @@
     background: black;
     color: white;
 }
-
-
 </style>
+<script language='JavaScript' src='../../../../src/import.php?f=baidu.i18n.cultures.zh-CN,baidu.ui.DatePicker'></script>
 </head>
 <body>
-<div id='calendarId' style='width:400px; height:300px; background:#eee;'></div>
-
+<input id='myinput' type='text' size='100'/>
+<div id='mydiv' style='height:2000px;'>
+    <div>
+        <div>
+            <div id='condiv'></div>
+        </div>
+        
+    </div>
+</div>
 </body>
 <script language='JavaScript'>
-var c = new baidu.ui.Calendar({
-    initDate: new Date('2000/3/20'),
-//    highlightDates: [new Date('2011/5/1')]
-//    disableDates: [new Date('2011/4/3'), new Date('2011/4/5'), {start: new Date('2011/4/21'), end: new Date('2011/4/27')} ]
-    onclickdate: function(evt){
-        console.log(evt.date.toLocaleString());
-    }
+var d = new baidu.ui.DatePicker({
+    width: 400,
+    height: 300
+//    format: 'dd日MM月yyyy年, yy年MM月dd日'
 });
-c.render('calendarId');
+d.render('myinput');
 </script>
 </html>

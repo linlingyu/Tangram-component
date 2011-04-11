@@ -13,8 +13,9 @@
  */
 baidu.i18n.cultures['zh-CN'] = baidu.i18n.cultures['zh-CN'] || {
     calendar: {
-        dateFormat: 'yyyy年MM月dd日',
-        monthNames: ['一月', '二月'],
+        dateFormat: 'yyyy-MM-dd',
+        titleNames: '#{yyyy}年&nbsp;#{MM}月',
+        monthNames: ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'],
         dayNames: {
             monday: '星期一',
             tuesday: '星期二',
@@ -24,6 +25,7 @@ baidu.i18n.cultures['zh-CN'] = baidu.i18n.cultures['zh-CN'] || {
             saturday: '星期六',
             sunday: '星期日'
         },
+        
         /**
          * 将一个格里高利公历转化为本地日历
          * @param {Date} date
@@ -34,6 +36,7 @@ baidu.i18n.cultures['zh-CN'] = baidu.i18n.cultures['zh-CN'] || {
             return new Date(timeZone / 60 != zone ? (date.getTime() + timeZone * 60000 + 3600000 * zone)
                 : date.getTime());
         },
+        
         /**
          * 将一个本地化的日历转化为格里高利公历
          * @param {Object} date

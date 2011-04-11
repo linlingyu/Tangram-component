@@ -14,6 +14,10 @@
 ///import baidu.array.indexOf;
 ///import baidu.array.some;
 ///import baidu.lang.isDate;
+///import baidu.dom.g;
+///import baidu.dom.addClass;
+///import baidu.dom.removeClass;
+///import baidu.dom.remove;
 
 /**
  * 创建一个简单的日历对象
@@ -31,7 +35,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         var ele = evt.element,
             date = me._dates[ele],
             beforeElement = baidu.dom.g(me._currElementId);
-        //移除之前的样
+        //移除之前的样子
         beforeElement && baidu.dom.removeClass(beforeElement, me.getClass('date-current'));
         me._currElementId = ele;
         me._currLocalDate = date;
@@ -41,7 +45,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     });
 }).extend({
     uiType: 'calendar',
-    weekStart: 'sunday',//
+    weekStart: 'sunday',//定义周的第一天
     statable: true,
     
     tplDOM: '<div id="#{id}" class="#{class}">#{content}</div>',
@@ -50,6 +54,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     
     /**
      * 对initDate, highlight, disableDates, weekStart等参数进行初始化为本地时间
+     * @private
      */
     _initialize: function(){
         var me = this;
@@ -69,7 +74,10 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 根据参数取得单个日子的json
+     * @param {Date} date 一个日期对象
+     * @return 返回格式{id:'', 'class': '', handler:'', date: '', disable:''}
+     * @private
      */
     _getDateJson: function(date){
         var me = this,
@@ -116,7 +124,10 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 取得参数日期对象所对月份的长度
+     * 取得参数日期对象所对月份的天数
+     * @param {Number} year 年份
+     * @param {Number} month 月份
+     * @private
      */
     _getMonthCount: function(year, month){
         var monthArr = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -125,7 +136,8 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 生成日期表格的字符串用于渲染日期表
+     * @private
      */
     _getDateTableString: function(){
         var me = this,
@@ -183,7 +195,8 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 生成日期容器的字符串
+     * @private
      */
     getString: function(){
         var me = this,
@@ -208,7 +221,9 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 将一个非本地化的日期转化为本地化的日期对象
+     * @param {Date} date 一个非本地化的日期对象
+     * @private
      */
     _toLocalDate: function(date){//很多地方都需要使用到转化，为避免总是需要写一长串i18n特地做成方法吧
         return date ? baidu.i18n.culture.calendar.toLocalDate(date)
@@ -216,11 +231,18 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 渲染日期表到容器中
+     * @private
      */
     _renderDate: function(){
-        var me = this;
-        baidu.dom.g(me.getId('label')).innerHTML = baidu.date.format(me._currLocalDate, 'yyyy-MM-dd');
+        var me = this,
+            calendar = baidu.i18n.culture.calendar,
+            curr = me._currLocalDate;
+        baidu.dom.g(me.getId('label')).innerHTML = baidu.string.format(calendar.titleNames, {
+            yyyy: curr.getFullYear(),
+            MM: calendar.monthNames[curr.getMonth()],
+            dd: curr.getDate()
+        });
         baidu.dom.g(me.getId('content')).innerHTML = me._getDateTableString();
         //渲染后对disabled的日期进行setState管理
         baidu.array.each(me._disabledIds, function(item){
@@ -229,7 +251,9 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 左右翻页的事件侦听器
+     * @param {String} pos 方向 prev || next
+     * @private
      */
     _onMouseDown: function(pos){
         var me = this,
@@ -242,7 +266,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-      渲染日期组件到参数指定的容器中
+     * 渲染日期组件到参数指定的容器中
      * @param {HTMLElement} target
      */
     render: function(target){
@@ -285,7 +309,8 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 跳转到某一天
+     * @param {Date} date 一个非本地化的日期对象
      */
     gotoDate: function(date){
         var me = this;
@@ -328,7 +353,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 取得一个本地化的当天的日期
      */
     getToday: function(){
         return me._toLocalDate(new Date());
@@ -342,7 +367,15 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 
+     * 用一个本地化的日期设置当前的显示日期
+     * @param {Date} date 一个当地的日期对象
+     */
+    setDate: function(date){
+        baidu.lang.isDate(date) && (this._currLocalDate = date);
+    },
+    
+    /**
+     * 析构函数
      */
     dispose: function(){
         var me = this;
