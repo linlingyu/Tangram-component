@@ -7,43 +7,46 @@
 ///import baidu.object.extend;
 /**
  * 一个中文的语言包
- * @param {String} dateFormat 需要显示在日历组件中的格式
- * @param {Array} monthNames 各个月份的中文表示方式
- * @param {Object} dayNames 各个星期的中文表示方式
  */
-baidu.i18n.cultures['zh-CN'] = baidu.i18n.cultures['zh-CN'] || {
+baidu.i18n.cultures['zh-CN'] = baidu.object.extend(baidu.i18n.cultures['zh-CN'] || {}, {
     calendar: {
         dateFormat: 'yyyy-MM-dd',
         titleNames: '#{yyyy}年&nbsp;#{MM}月',
         monthNames: ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'],
-        dayNames: {
-            monday: '星期一',
-            tuesday: '星期二',
-            wednesday: '星期三',
-            thursday: '星期四',
-            fraiday: '星期五',
-            saturday: '星期六',
-            sunday: '星期日'
+        dayNames: {mon: '一', tues: '二', wed: '三', thur: '四', fri: '五', sat: '六', sun: '日'},
+        
+        /**
+         * 本地日历和格里高历相互转化的基础函数
+         * @param {Date} date 一个Date对象日期
+         * @param {String} type 取值local: 将参数日期转为本地日历, gregorian: 将参数日期转为格里高利公历
+         * @return {Date}
+         * @private
+         */
+        _basicDate: function(date, type){
+            var timeZone = ('local' == type ? 1 : -1) * date.getTimezoneOffset(),
+                zone = 8,//时区
+                millisec = date.getTime();
+            return new Date(timeZone / 60 != zone ? (millisec + timeZone * 60000 + 3600000 * zone)
+                : millisec);
         },
         
         /**
          * 将一个格里高利公历转化为本地日历
          * @param {Date} date
+         * @return {Date}
          */
         toLocalDate: function(date){
-            var timeZone = date.getTimezoneOffset(),
-                zone = 8;//时区
-            return new Date(timeZone / 60 != zone ? (date.getTime() + timeZone * 60000 + 3600000 * zone)
-                : date.getTime());
+            return this._basicDate(date, 'local');
         },
         
         /**
          * 将一个本地化的日历转化为格里高利公历
-         * @param {Object} date
+         * @param {Date} date
+         * @return {Date}
          */
         toGregorianDate: function(date){
-            
+            return this._basicDate(date, 'gregorian');
         }
     }
-};
+});
 baidu.object.extend(baidu.i18n.culture, baidu.i18n.cultures['zh-CN']);

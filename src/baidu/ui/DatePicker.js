@@ -4,6 +4,7 @@
  */
 
 ///import baidu.ui.createUI;
+///import baidu.object.merge;
 ///import baidu.ui.Popup.Popup$smartCover;
 ///import baidu.ui.Calendar;
 ///import baidu.event.on;
@@ -14,6 +15,7 @@
 ///import baidu.fn.bind;
 ///import baidu.dom.g;
 ///import baidu.dom.getPosition;
+///import baidu.browser.isStrict;
 
 /**
  * 创建一个日历对象绑定于一个input输入域
@@ -21,13 +23,21 @@
  * @config {Number} width 日历组件的宽度
  * @config {Number} height 日历组件的高度
  * @config {String} format 日历组件格式化日历的格式，默认：yyyy-MM-dd
+ * @config {Object} popupOptions Picker组件的浮动层由Popup组件渲染，该参数用来设置Popup的属性，具体参考Popup
+ * @config {Object} calendarOptions Picker组件的日历由Calendar组件渲染，该参数来用设置Calendar的属性，具体参考Calendar
  * @config {Function} onpick 当选中某个日期时的触发事件
  */
 baidu.ui.DatePicker = baidu.ui.createUI(function(options){
     var me = this;
     me.format = me.format || baidu.i18n.culture.calendar.dateFormat || 'yyyy-MM-dd';
-    me._popup = new baidu.ui.Popup(options);
-    me._calendar = new baidu.ui.Calendar(options);
+    me.popupOptions = baidu.object.merge(me.popupOptions || {},
+        options,
+        {overwrite: true, whiteList: ['width', 'height']});
+    me.calendarOptions = baidu.object.merge(me.calendarOptions || {},
+        options,
+        {overwrite: true, whiteList: ['weekStart']});
+    me._popup = new baidu.ui.Popup(me.popupOptions);
+    me._calendar = new baidu.ui.Calendar(me.calendarOptions);
     me._calendar.addEventListener('clickdate', function(evt){
         me.pick(evt.date);
     });
@@ -89,14 +99,9 @@ baidu.ui.DatePicker = baidu.ui.createUI(function(options){
         }
         popup.render();
         me._calendar.render(popup.getBody());
-        baidu.event.on(input, 'focus', focusHandler);
-        baidu.event.on(input, 'keyup', keyHandler);
-        baidu.event.on(document, 'click', mouseHandler);
-        me.addEventListener('dispose', function(){
-            baidu.event.un(input, 'focus', focusHandler);
-            baidu.event.un(input, 'keyup', keyHandler);
-            baidu.event.un(document, 'click', mouseHandler);
-        });
+        me.on(input, 'focus', focusHandler);
+        me.on(input, 'keyup', keyHandler);
+        me.on(document, 'click', mouseHandler);
     },
     
     /**
@@ -116,13 +121,19 @@ baidu.ui.DatePicker = baidu.ui.createUI(function(options){
     show: function(){
         var me = this,
             pos = me.input && baidu.dom.getPosition(me.input),
+            popup = me._popup,
             calendar = me._calendar,
-            date = me._getInputDate() || calendar._toLocalDate(new Date());
+            date = me._getInputDate() || calendar._toLocalDate(new Date()),
+            doc = document[baidu.browser.isStrict ? 'documentElement' : 'body'],
+            inputHeight = me.input.offsetHeight,
+            popupHeight = me._popup.getBody().offsetHeight;
+            
         if(date.getTime() != calendar.getDate().getTime()){
             calendar.setDate(date);
             calendar._renderDate();
         }
-        pos.top += me.input.offsetHeight;
+        pos.top += (pos.top + inputHeight + popupHeight - doc.scrollTop > doc.clientHeight) ? -popupHeight
+            : inputHeight;
         me._popup.open(pos);
     },
     

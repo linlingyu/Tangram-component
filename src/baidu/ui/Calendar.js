@@ -22,10 +22,11 @@
 /**
  * 创建一个简单的日历对象
  * @param {Object} options config参数
- * @config {String} weekStart 定义周的第一天，取值:'monday'|'tuesday'|'wednesday'|'thursday'|'fraiday'|'saturday'|'sunday'，默认值'sunday'
+ * @config {String} weekStart 定义周的第一天，取值:'Mon'|'Tues'|'Web'|'Thur'|'Fri'|'Sat'|'Sun'，默认值'Sun'
  * @config {Date} initDate 以某个本地日期打开日历，默认值是当前日期
  * @config {Array} highlightDates 设定需要高亮显示的某几个日期或日期区间，格式:[date, {start:date, end:date}, date, date...]
  * @config {Array} disableDates 设定不可使用的某几个日期或日期区间，格式:[date, {start:date, end:date}, date, date...]
+ * @config {Object} flipContent 设置翻转月份按钮的内容，格式{prev: '', next: ''}
  * @config {function} onclickdate 当点击某个日期的某天时触发该事件
  * @author linlingyu
  */
@@ -45,12 +46,14 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     });
 }).extend({
     uiType: 'calendar',
-    weekStart: 'sunday',//定义周的第一天
+    weekStart: 'Sun',//定义周的第一天
     statable: true,
+    flipContent: {prev: '&lt;', next: '&gt;'},
     
     tplDOM: '<div id="#{id}" class="#{class}">#{content}</div>',
-    tplTable: '<table border="1" class="#{class}"><thead class="#{headClass}">#{head}</thead><tbody class="#{bodyClass}">#{body}</tbody></table>',
+    tplTable: '<table border="0" cellpadding="0" cellspacing="1" class="#{class}"><thead class="#{headClass}">#{head}</thead><tbody class="#{bodyClass}">#{body}</tbody></table>',
     tplDateCell: '<td id="#{id}" class="#{class}" #{handler}>#{content}</td>',
+    tplTitle: '<div id="#{id}" class="#{class}"><div id="#{labelId}" class="#{labelClass}"></div><div id="#{prevId}" class="#{prevClass}"></div><div id="#{nextId}" class="#{nextClass}"></div></div>',
     
     /**
      * 对initDate, highlight, disableDates, weekStart等参数进行初始化为本地时间
@@ -86,15 +89,17 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
             css = [],
             disabled;
         function compare(srcDate, compDate){
-            return new Date(srcDate.getFullYear(),
-                srcDate.getMonth(),
-                srcDate.getDate()).getTime() == compDate.getTime();
+            //不能用毫秒数除以一天毫秒数来比较(2011/1/1 0:0:0 2011/1/1 23:59:59)
+            //不能用compDate - srcDate和一天的毫秒数来比较(2011/1/1 12:0:0 2011/1/2/ 0:0:0)
+            return srcDate.getDate() == compDate.getDate()
+                && Math.abs(srcDate.getTime() - compDate.getTime()) < 24 * 60 * 60 * 1000;
         }
         function contains(array, date){
             var time = date.getTime();
             return baidu.array.some(array, function(item){
                 if(baidu.lang.isDate(item)){
-                    return item.getTime() == time;
+                    return item.getDate() == date.getDate()
+                        && Math.abs(item.getTime() - date.getTime()) < 24 * 60 * 60 * 1000;
                 }else{
                     return time >= item.start.getTime()
                         && time <= item.end.getTime();
@@ -142,7 +147,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     _getDateTableString: function(){
         var me = this,
             calendar = baidu.i18n.culture.calendar,
-            dayArr = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'fraiday', 'saturday'],//day index
+            dayArr = ['sun', 'mon', 'tues', 'wed', 'thur', 'fri', 'sat'],//day index
             curr = me._currLocalDate,
             year = curr.getFullYear(),
             month = curr.getMonth(),
@@ -152,7 +157,8 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
             bodyArr = [],
             weekArray = [],
             disabledIds = me._disabledIds = [],
-            i = j = 0,
+            i = 0,
+            j = 0,
             len = dayArr.length,
             count,
             date;
@@ -199,24 +205,14 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
      * @private
      */
     getString: function(){
-        var me = this,
-            str;
-        str = baidu.string.format(me.tplDOM, {
-            id: me.getId('title'),
-            'class': me.getClass('title'),
-            content: baidu.string.format(me.tplDOM, {
-                id: me.getId('label'),
-                'class': me.getClass('label')
-            })
-        });
-        str += baidu.string.format(me.tplDOM, {
-            id: me.getId('content'),
-            'class': me.getClass('content')
-        });
+        var me = this;
         return baidu.string.format(me.tplDOM, {
             id: me.getId(),
             'class': me.getClass(),
-            content: str
+            content: baidu.string.format(me.tplDOM, {
+                id: me.getId('content'),
+                'class': me.getClass('content')
+            })
         });
     },
     
@@ -251,11 +247,11 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     },
     
     /**
-     * 左右翻页的事件侦听器
+     * 左右翻页跳转月份的基础函数
      * @param {String} pos 方向 prev || next
      * @private
      */
-    _onMouseDown: function(pos){
+    _basicFlipMonth: function(pos){
         var me = this,
             curr = me._currLocalDate,
             month = curr.getMonth() + (pos == 'prev' ? -1 : 1),
@@ -263,6 +259,48 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         month = month < 0 ? 12 : (month > 11 ? 0 : month);
         curr.setYear(year);
         me.gotoMonth(month);
+        me.dispatchEvent(pos + 'month', {date: new Date(curr.getTime())});
+    },
+    
+    /**
+     * 渲染日历表的标题说明
+     */
+    renderTitle: function(){
+        var me = this,
+            prev,
+            next;
+        baidu.dom.insertHTML(me.getBody(),
+            'afterBegin',
+            baidu.string.format(me.tplTitle, {
+                id: me.getId('title'),
+                'class': me.getClass('title'),
+                labelId: me.getId('label'),
+                labelClass: me.getClass('label'),
+                prevId: me.getId('prev'),
+                prevClass: me.getClass('prev'),
+                nextId: me.getId('next'),
+                nextClass: me.getClass('next')
+            })
+        );
+        function getOptions(pos){
+            return {
+                classPrefix: me.classPrefix + '-' + pos + 'btn',
+                skin: me.skin ? me.skin + '-' + pos : '',
+                content: me.flipContent[pos],
+                poll: {time: 4},
+                element: me.getId(pos),
+                autoRender: true,
+                onmousedown: function(){
+                    me._basicFlipMonth(pos);
+                }
+            };
+        }
+        prev = new baidu.ui.Button(getOptions('prev'));
+        next = new baidu.ui.Button(getOptions('next'));
+        me.addEventListener('ondispose', function(){
+            prev.dispose();
+            next.dispose();
+        });
     },
     
     /**
@@ -274,26 +312,12 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
             skin = me.skin;
         if(!target || me.getMain()){return;}
         baidu.dom.insertHTML(me.renderMain(target), 'beforeEnd', me.getString());
-        function getOptions(pos){
-            return {
-                classPrefix: me.classPrefix + '-' + pos,
-                skin: me.skin ? me.skin + '-' + pos : '',
-                content: pos == 'prev'? '<' : '>',
-                poll: {time: 4},
-                element: me.getId('title'),
-                autoRender: true,
-                onmousedown: function(){
-                    me._onMouseDown(pos);
-                }
-            };
-        }
-        me._prev = new baidu.ui.Button(getOptions('prev'));
-        me._next = new baidu.ui.Button(getOptions('next'));
+        me.renderTitle();
         me._initialize();
         me._renderDate();
         baidu.dom.g(me.getId('content')).style.height = me.getBody().clientHeight
             - baidu.dom.g(me.getId('title')).offsetHeight + 'px';
-        me.dispatchEvent('load');
+        me.dispatchEvent('onload');
     },
     
     /**
@@ -305,7 +329,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         baidu.object.extend(me, options || {});
         me._initialize();
         me._renderDate();
-        me.dispatchEvent('update');
+        me.dispatchEvent('onupdate');
     },
     
     /**
@@ -317,6 +341,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         me.initDate = date;
         me._currLocalDate = me._toLocalDate(date);
         me._renderDate();
+        me.dispatchEvent('ongotomonth');
     },
     
     /**
@@ -335,6 +360,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         }
         curr.setFullYear(year);
         me._renderDate();
+        me.dispatchEvent('ongotomonth');
     },
     
     /**
@@ -350,6 +376,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         date > count && curr.setDate(count);
         curr.setMonth(month);
         me._renderDate();
+        me.dispatchEvent('ongotomonth');
     },
     
     /**
@@ -361,6 +388,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     
     /**
      * 返回一个当前选中的当地日期对象
+     * @return {Date}
      */
     getDate: function(){
         return new Date(this._currLocalDate.getTime());
@@ -374,6 +402,20 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
         baidu.lang.isDate(date) && (this._currLocalDate = date);
     },
     
+    /**
+     * 翻页到上一个月份，当在年初时会翻到上一年的最后一个月份
+     */
+    prevMonth: function(){
+        this._basicFlipMonth('prev');
+    },
+    
+    /**
+     * 翻页到下一个月份，当在年末时会翻到下一年的第一个月份
+     */
+    nextMonth: function(){
+        this._basicFlipMonth('next');
+    },
+        
     /**
      * 析构函数
      */
