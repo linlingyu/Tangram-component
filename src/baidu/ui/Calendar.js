@@ -23,7 +23,7 @@
 /**
  * 创建一个简单的日历对象
  * @param {Object} options config参数
- * @config {String} weekStart 定义周的第一天，取值:'Mon'|'Tues'|'Web'|'Thur'|'Fri'|'Sat'|'Sun'，默认值'Sun'
+ * @config {String} weekStart 定义周的第一天，取值:'Mon'|'Tue'|'Web'|'Thu'|'Fri'|'Sat'|'Sun'，默认值'Sun'
  * @config {Date} initDate 以某个本地日期打开日历，默认值是当前日期
  * @config {Array} highlightDates 设定需要高亮显示的某几个日期或日期区间，格式:[date, {start:date, end:date}, date, date...]
  * @config {Array} disableDates 设定不可使用的某几个日期或日期区间，格式:[date, {start:date, end:date}, date, date...]
@@ -154,7 +154,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     _getDateTableString: function(){
         var me = this,
             calendar = baidu.i18n.culture.calendar,
-            dayArr = ['sun', 'mon', 'tues', 'wed', 'thur', 'fri', 'sat'],//day index
+            dayArr = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'],//day index
             curr = me._currLocalDate,
             year = curr.getFullYear(),
             month = curr.getMonth(),
