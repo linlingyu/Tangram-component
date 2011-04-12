@@ -31,6 +31,14 @@ baidu.i18n.cultures['zh-CN'] = baidu.object.extend(baidu.i18n.cultures['zh-CN'] 
         },
         
         /**
+         * 取得某年某个月份有几天
+         */
+        getMonthCount: function(year, month){
+            var monthArr = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            return 1 == month && !(year % 4)
+            && (year % 100 != 0 || year % 400 == 0) ? 29 : monthArr[month];
+        },
+        /**
          * 将一个格里高利公历转化为本地日历
          * @param {Date} date
          * @return {Date}

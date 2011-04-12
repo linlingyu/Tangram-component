@@ -18,6 +18,7 @@
 ///import baidu.dom.addClass;
 ///import baidu.dom.removeClass;
 ///import baidu.dom.remove;
+///import baidu.lang.isNumber;
 
 /**
  * 创建一个简单的日历对象
@@ -135,9 +136,15 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
      * @private
      */
     _getMonthCount: function(year, month){
-        var monthArr = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        return 1 == month && !(year % 4)
-            && (year % 100 != 0 || year % 400 == 0) ? 29 : monthArr[month];
+        var invoke = baidu.i18n.culture.calendar.getMonthCount,
+            monthArr = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+            count;
+        invoke && (count = invoke(year, month));
+        if(!baidu.lang.isNumber(count)){
+            count = 1 == month && (year % 4)
+                && (year % 100 != 0 || year % 400 == 0) ? 29 : monthArr[month];
+        }
+        return count;
     },
     
     /**
