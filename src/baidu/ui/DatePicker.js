@@ -123,15 +123,10 @@ baidu.ui.DatePicker = baidu.ui.createUI(function(options){
             pos = me.input && baidu.dom.getPosition(me.input),
             popup = me._popup,
             calendar = me._calendar,
-            date = me._getInputDate() || calendar._toLocalDate(new Date()),
             doc = document[baidu.browser.isStrict ? 'documentElement' : 'body'],
             inputHeight = me.input.offsetHeight,
             popupHeight = me._popup.getBody().offsetHeight;
-            
-        if(date.getTime() != calendar.getDate().getTime()){
-            calendar.setDate(date);
-            calendar._renderDate();
-        }
+        me._calendar.update({initDate: me._getInputDate() || calendar._toLocalDate(new Date())});
         pos.top += (pos.top + inputHeight + popupHeight - doc.scrollTop > doc.clientHeight) ? -popupHeight
             : inputHeight;
         me._popup.open(pos);
