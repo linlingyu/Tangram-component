@@ -35,7 +35,7 @@ baidu.ui.Calendar = baidu.ui.createUI(function(options){
     var me = this;
     me.flipContent = baidu.object.extend({prev: '&lt;', next: '&gt;'},
         me.flipContent);
-    me.addEventListener('click', function(evt){
+    me.addEventListener('mouseup', function(evt){
         var ele = evt.element,
             date = me._dates[ele],
             beforeElement = baidu.dom.g(me._currElementId);
